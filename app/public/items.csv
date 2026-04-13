@@ -1,0 +1,3 @@
+id,image,brand,price,color,category,tags,link,isAd
+1,,GRL,1999,beige,onepiece,"knit;long",https://grl.jp/xxx,false
+2,,GRL,2999,white,cardigan,"fluffy;soft",https://grl.jp/yyy,true

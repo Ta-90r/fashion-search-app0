@@ -1,44 +1,44 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY!,
 });
 
-export async function POST(req: Request) {
-  try {
-    const { text } = await req.json();
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-    if (!text) {
-      return NextResponse.json(
-        { error: "text is required" },
-        { status: 400 }
-      );
+export async function POST() {
+  try {
+    const { data: docs } = await supabase
+      .from("documents")
+      .select("id, content")
+      .is("embedding", null);
+
+    if (!docs || docs.length === 0) {
+      return NextResponse.json({ message: "No documents to embed" });
     }
 
-    const embeddingResponse = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: text,
-    });
+    for (const doc of docs) {
+      const embeddingRes = await openai.embeddings.create({
+        model: "text-embedding-3-small",
+        input: doc.content,
+      });
 
-    const embedding = embeddingResponse.data[0].embedding;
-
-    const { error } = await supabase.from("documents").insert({
-      content: text,
-      embedding: embedding,
-    });
-
-    if (error) {
-      throw error;
+      await supabase
+        .from("documents")
+        .update({
+          embedding: embeddingRes.data[0].embedding,
+        })
+        .eq("id", doc.id);
     }
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: "failed to create embedding" },
-      { status: 500 }
-    );
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "embedding failed" }, { status: 500 });
   }
 }

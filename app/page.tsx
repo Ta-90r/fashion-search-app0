@@ -1,77 +1,30 @@
-"use client";
-
-import { useState } from "react";
+import products from "../data/products.json";
 
 export default function Home() {
-  const [query, setQuery] = useState("");
-  const [threshold, setThreshold] = useState(0.7);
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const search = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query,
-          match_threshold: threshold,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "search failed");
-      }
-
-      setResults(data.results);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <main style={{ padding: 24, maxWidth: 600, margin: "auto" }}>
-      <h1>Semantic Search</h1>
+    <main style={{ padding: "20px" }}>
+      <h1>高い服 → プチプラ再現</h1>
 
-      <textarea
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="検索したい文章を入力"
-        style={{ width: "100%", height: 100 }}
-      />
+      {products.map((item: any, index: number) => (
+        <div key={index} style={{ marginBottom: "40px" }}>
+          <h2>{item.title}</h2>
 
-      <div style={{ marginTop: 12 }}>
-        <label>類似度しきい値: {threshold}</label>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={threshold}
-          onChange={(e) => setThreshold(Number(e.target.value))}
-        />
-      </div>
+          <p>
+            {item.high_brand} → {item.dupe_brand}
+          </p>
 
-      <button onClick={search} disabled={loading}>
-        {loading ? "検索中..." : "検索"}
-      </button>
+          <div style={{ display: "flex", gap: "20px" }}>
+            <img src={item.high_image} width="150" />
+            <img src={item.dupe_image} width="150" />
+          </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+          <p>¥{item.price}</p>
 
-      <ul>
-        {results.map((r, i) => (
-          <li key={i}>
-            <strong>{r.similarity.toFixed(2)}</strong> – {r.content}
-          </li>
-        ))}
-      </ul>
+          <a href={item.link} target="_blank">
+            楽天で見る
+          </a>
+        </div>
+      ))}
     </main>
   );
 }
